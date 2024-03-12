@@ -1,0 +1,9 @@
+dtd/
+.venv/
+backgrounds.pck
+*.pt
+training/
+runs/
+images/
+mahjong-dataset/
+yolov5/

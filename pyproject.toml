@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "mahjong-hand-classifier"
+version = "0.1.0"
+description = "Recognize images of mahjong hand and return the tiles in a hand"
+authors = ["Philo-Sophia <xingfanxia@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+matplotlib = "^3.8.3"
+opencv-python = "^4.9.0.80"
+numpy = "^1.26.4"
+progressbar2 = "^4.4.2"
+ultralytics = "^8.1.27"
+
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.29.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
