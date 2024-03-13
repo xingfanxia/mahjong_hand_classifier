@@ -1338,6 +1338,17 @@ files = [
 ]
 
 [[package]]
+name = "mahjong"
+version = "1.2.1"
+description = "Mahjong hands calculation"
+optional = false
+python-versions = "*"
+files = [
+    {file = "mahjong-1.2.1-py3-none-any.whl", hash = "sha256:5df358127a73a26751f1f60635c65e02e6f363ce70339d3478c396301163277e"},
+    {file = "mahjong-1.2.1.tar.gz", hash = "sha256:afbef2f5fea656b73eacb6396176d1e80cd06123c24dbea27df87100e8502097"},
+]
+
+[[package]]
 name = "markdown-it-py"
 version = "3.0.0"
 description = "Python port of markdown-it. Markdown parsing, done right!"
@@ -3558,4 +3569,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "ac3fbf03e3e896aa1a102aae731a8884c5253bd0aa4191475d431bd59b53f7d5"
+content-hash = "99969bce5fdfca15cf4503bd1b0c5705dcaa23189912fd75942264a2ad52bbd8"
