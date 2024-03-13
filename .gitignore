@@ -7,3 +7,5 @@ runs/
 images/
 mahjong-dataset/
 yolov5/
+datasets/
+mahjong/

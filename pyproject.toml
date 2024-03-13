@@ -13,6 +13,11 @@ opencv-python = "^4.9.0.80"
 numpy = "^1.26.4"
 progressbar2 = "^4.4.2"
 ultralytics = "^8.1.27"
+clearml = "^1.14.4"
+comet-ml = "^3.39.0"
+tflite = "^2.10.0"
+flask = "^3.0.2"
+inference-sdk = "^0.9.16"
 
 
 [tool.poetry.group.dev.dependencies]
