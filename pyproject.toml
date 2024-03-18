@@ -7,18 +7,21 @@ license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = ">=3.9,<3.11"
 matplotlib = "^3.8.3"
-opencv-python = "^4.9.0.80"
-numpy = "^1.26.4"
+opencv-python = "4.8.0.76"
+numpy = "1.25.2"
 progressbar2 = "^4.4.2"
-ultralytics = "^8.1.27"
+ultralytics = "8.0.196"
 clearml = "^1.14.4"
 comet-ml = "^3.39.0"
 tflite = "^2.10.0"
 flask = "^3.0.2"
 inference-sdk = "^0.9.16"
 mahjong = "^1.2.1"
+supervision = "^0.18.0"
+inference = "^0.9.16"
+roboflow = "^1.1.24"
 
 
 [tool.poetry.group.dev.dependencies]
