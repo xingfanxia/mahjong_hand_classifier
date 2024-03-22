@@ -41,137 +41,138 @@ class MahjongInference:
         files_in_directory = os.listdir(directory_path)
         return [os.path.join(directory_path, file) for file in files_in_directory if os.path.splitext(file)[1].lower() in self.image_extensions and "annotated" not in file]
     
+from mahjong.hand_calculating.hand import HandCalculator
+from mahjong.tile import TilesConverter
+from mahjong.hand_calculating.hand_config import HandConfig
+from mahjong.meld import Meld
+from collections import defaultdict
+from mahjong.shanten import Shanten
+
+
 class MahjongScorer:
-    def __init__(self):
+    def __init__(self, player_wind='east', round_wind='east'):
         self.calculator = HandCalculator()
-        self.config = HandConfig(is_tsumo=False, is_riichi=False, player_wind='east', round_wind='east')
-        self.dora_indicators = ""
-        
-    def update_config(self, config):
-        self.config = config
-    
+        self.config = HandConfig(is_tsumo=False, is_riichi=False,
+                                 player_wind=player_wind, round_wind=round_wind)
+        self.dora_indicators = []
+
+    def update_config(self, **kwargs):
+        for key, value in kwargs.items():
+            if hasattr(self.config, key):
+                setattr(self.config, key, value)
+
     def update_dora_indicators(self, dora_indicators):
         self.dora_indicators = dora_indicators
-    
-    def parse_hand_string(self, hand):
+
+    def _parse_hand_tiles(self, hand):
         hand_dict = defaultdict(list)
         for tile in hand:
-            if "m" in tile:
-                hand_dict["m"].append(tile[0])
-            elif "p" in tile:
-                hand_dict["p"].append(tile[0])
-            elif "s" in tile:
-                hand_dict["s"].append(tile[0])
-            elif "z" in tile:
-                hand_dict["z"].append(tile[0])
-        return "".join(
-                    ["".join(tile_numbers) + tile_type for tile_type, tile_numbers in hand_dict.items()]
-                )
-        
-    def parse_hand(self, hand, parse_type=136):
-        if type(hand) == str:
-            return TilesConverter.one_line_string_to_136_array(string=hand)
-        elif type(hand) == list:
+            if 'm' in tile:
+                hand_dict['m'].append(tile[0])
+            elif 'p' in tile:
+                hand_dict['p'].append(tile[0])
+            elif 's' in tile:
+                hand_dict['s'].append(tile[0])
+            elif 'z' in tile:
+                hand_dict['z'].append(tile[0])
 
-            if parse_type == 136:
-                return TilesConverter.one_line_string_to_136_array(string=self.parse_hand_string(hand))
-            else:
-                return TilesConverter.one_line_string_to_34_array(string=self.parse_hand_string(hand))
-    
-    def str_repr_hand(self, hand):
-        return self.parse_hand_string(hand)
+        sorted_hand = ''
+        for suit in 'mpsz':
+            if suit in hand_dict:
+                sorted_tiles = ''.join(sorted(hand_dict[suit]))
+                sorted_hand += f'{sorted_tiles}{suit}'
+        return sorted_hand
+
+    def _convert_hand_to_tiles(self, hand, tiles_type):
+        hand_string = self._parse_hand_tiles(hand)
+        if tiles_type == 136:
+            return TilesConverter.one_line_string_to_136_array(string=hand_string)
+        else:
+            return TilesConverter.one_line_string_to_34_array(string=hand_string)
+
+    def _tile_string_representation(self, hand):
+        return self._parse_hand_tiles(hand)
+
+    def _calculate_dora_tiles(self):
+        return TilesConverter.one_line_string_to_136_array(string="".join(self.dora_indicators))
+
+    def _print_verbose(self, hand, result):
+        print("你的手牌是: ", self._tile_string_representation(hand))
+        print(f"点数: {result.cost['total']}, 番数: {result.han}, 符数: {result.fu}, 牌型: {result.yaku}, 满吗: {result.cost['yaku_level']}")
+        for yaku in result.yaku:
+                print(f"\t\t役: {yaku.name}, 役数: {yaku.han_closed}")
+        for fu_item in result.fu_details:
+            print(fu_item)
+        print(f"Congrats!\n")
 
     def hand_score(self, hand, win_tile, verbose=True):
-        tiles = self.parse_hand(hand)
-        parsed_win_tile = self.parse_hand(win_tile)[0]
-        dora_indicators_array = TilesConverter.one_line_string_to_136_array(string=self.dora_indicators)
-        # print(f"Hand is: {hand}, winning_tile is: {win_tile}, dora_indicators are: {self.dora_indicators}")
-        result = self.calculator.estimate_hand_value(tiles, parsed_win_tile, config=self.config, dora_indicators=dora_indicators_array)
-        if not result.error: # if winning hand calc
+        tiles = self._convert_hand_to_tiles(hand, tiles_type=136)
+        parsed_win_tile = self._convert_hand_to_tiles([win_tile], tiles_type=136)[0]
+        dora_tiles = self._calculate_dora_tiles()
+        result = self.calculator.estimate_hand_value(tiles, parsed_win_tile,
+                                                     config=self.config, dora_indicators=dora_tiles)
+        if not result.error:
             if verbose:
-                print("你的手牌是: ", self.str_repr_hand(hand))
-                print(f"{result.cost['yaku_level']} 番数: {result.han}, 符数: {result.fu}")
-                print(result.cost['total'])
-                # print("Score Breakdown:\n")
-                # for k, v in result.cost.items():
-                #     print(f"{k}: {v}")
-                print(result.yaku)
-                for fu_item in result.fu_details:
-                    print(fu_item)
-                print("Cong!\n")
-            return (result.cost['total'], result)
+                self._print_verbose(hand, result)
+            return result.cost['total'], result
         else:
             if verbose:
-                print("ERROR", result.error)
+                print("ERROR:", result.error)
             return -1, None
 
     def calculate_shanten(self, hand):
-        shanten = Shanten()
-        tiles = self.parse_hand(hand, parse_type=34)
-        return shanten.calculate_shanten(tiles)
-    
-    def can_win(self, hand, win_tile):
-        score, full_score = self.hand_score(hand, win_tile, verbose=False)
-        return score, full_score
-            
+        tiles = self._convert_hand_to_tiles(hand, tiles_type=34)
+        shanten_calculator = Shanten()
+        return shanten_calculator.calculate_shanten(tiles)
+
+    def _generate_full_tile_set(self):
+        numbered_tiles = [f"{num}{suit}" for suit in "mps" for num in range(1, 10)]
+        honor_tiles = [f"{num}z" for num in range(1, 8)] # Only 1z through 7z exist
+        return numbered_tiles + honor_tiles
+
     def calculate_tenpai_tiles(self, hand):
-        full_tile_set = ["1m", "2m", "3m", "4m", "5m", "6m", "7m", "8m", "9m",
-                "1p", "2p", "3p", "4p", "5p", "6p", "7p", "8p", "9p",
-                "1s", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s",
-                "1z", "2z", "3z", "4z", "5z", "6z", "7z"]
+        full_tile_set = self._generate_full_tile_set()
         winning_tiles = []
         for tile in full_tile_set:
-            # Test if adding the current tile would make the hand tenpai
-            curr_hand = hand + [tile]
-            score, full_score = self.can_win(curr_hand, [tile])
+            score, result = self.hand_score(hand + [tile], win_tile=tile, verbose=False)
             if score != -1:
-                winning_tiles.append((score, tile, full_score.cost['yaku_level'], full_score.han, full_score.fu, full_score.yaku))
-        
-        return sorted(winning_tiles, reverse=True)
-
-    def print_possible_wins(self, winning_tiles):
-        if len(winning_tiles) == 0:
-            print("\t\t无役 别搞了!")
-        for res in winning_tiles:
-            print(f"\t\t听牌: {res[1]}, 役: {res[5]}, 分数: {res[0]} {res[2]}, 番数: {res[3]}, 符数: {res[4]}")
+                winning_tiles.append((score, tile, result))
+        return sorted(winning_tiles, key=lambda k: k[0], reverse=True)
     
+    def print_possible_wins(self, winning_tiles):
+        if not winning_tiles:
+            print("\t\t无役 别搞了!")
+            return
+        for score, tile, result in winning_tiles:
+            print(f"\t\t{'自摸' if self.config.is_tsumo else '荣和'}: {tile}, 点数: {result.cost['total']}, 番数: {result.han}, 符数: {result.fu}, 牌型: {result.yaku}, 满吗: {result.cost['yaku_level']}")
+            for yaku in result.yaku:
+                print(f"\t\t\t役: {yaku.name}, 役数: {yaku.han_open if yaku.han_open else yaku.han_closed}")
+            for fu_item in result.fu_details:
+                print("\t\t\t", fu_item)
+
     def list_all_possible_wins(self, hand):
-        print("听牌! 你的手牌是: ", self.str_repr_hand(hand))
-        winning_tiles = self.calculate_tenpai_tiles(hand)
-        # return winning_tiles
-        print("\t如果默听荣和")
-        self.print_possible_wins(winning_tiles)
-        
-        tmp_is_tsumo = self.config.is_tsumo
-        tmp_is_riichi = self.config.is_riichi
-        tmp_player_wind = self.config.player_wind
-        
-        print("\t如果自摸")
-        self.config.is_tsumo = True
-        winning_tiles = self.calculate_tenpai_tiles(hand)
-        # return winning_tiles
-        self.print_possible_wins(winning_tiles)
-        self.config.is_tsumo = tmp_is_tsumo
-        
-        print("\t如果立直荣和")
-        self.config.is_riichi = True
-        winning_tiles = self.calculate_tenpai_tiles(hand)
-        # return winning_tiles
-        self.print_possible_wins(winning_tiles)
-        self.config.is_riichi = tmp_is_riichi
-        
-        print("\t如果立直自摸")
-        self.config.is_riichi = True
-        self.config.is_tsumo = True
-        winning_tiles = self.calculate_tenpai_tiles(hand)
-        # return winning_tiles
-        self.print_possible_wins(winning_tiles)
-        self.config.is_tsumo = tmp_is_tsumo
-        self.config.is_riichi = tmp_is_riichi
+        print("听牌! 你的手牌是: ", self._parse_hand_tiles(hand))
+        config_scenarios = [
+            (False, False, "\t如果默听荣和"),
+            (True, False, "\t如果自摸"),
+            (False, True, "\t如果立直荣和"),
+            (True, True, "\t如果立直自摸")
+        ]
+
+        original_config = (self.config.is_tsumo, self.config.is_riichi)
+        for is_tsumo, is_riichi, scenario_message in config_scenarios:
+            self.update_config(is_tsumo=is_tsumo, is_riichi=is_riichi)
+            winning_tiles = self.calculate_tenpai_tiles(hand)
+            print(scenario_message)
+            self.print_possible_wins(winning_tiles)
+
+        self.update_config(is_tsumo=original_config[0], is_riichi=original_config[1])
         print("GLHF\n")
-            
+        
     def process_hand(self, hand, win_tile=None, dora_indicators=None):
-        self.update_dora_indicators(dora_indicators)
+        if dora_indicators is not None:
+            self.update_dora_indicators(dora_indicators)
+
         if len(hand) == 14:
             self.hand_score(hand, win_tile)
         elif len(hand) == 13:
