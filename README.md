@@ -13,16 +13,14 @@ Created for fun. Used for auto score mahjong hands and futher projects.
 ### To do
 - Finish the Flask Web app.
   - [x] Create a simple web app.
-  - [ ] Support take a picture and score.
-  - [ ] Support specify dora and other conditions.
-  - [ ] Support continuous web cam capture
+  - [ ] Support taking a picture and score.
+  - [ ] Support specifying dora and other conditions.
+  - [ ] Support continuous web cam capture and score.
 - [ ] Improve the model.
   - [ ] Add more training and validation data (can auto capture a hand while in game every few seconds)
 - [ ] Add Hand improvement suggestions.
   - [ ] Recursively calculate possible hand improvement tiles.
 
-### Improvements
-- Need more labeled data.
 ### Some Ideas
 - Have a web cam taking video feed of hand then
   - Auto voice over for each mahjong tile played.
